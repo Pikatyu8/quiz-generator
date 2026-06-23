@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Political/Values Test Creator & Runner</title>
@@ -246,7 +246,7 @@
     // =========================================================================
     // ЛОКАЛИЗАЦИЯ (i18n)
     // =========================================================================
-    let currentLang = 'ru';
+    let currentLang = 'en';
 
     const translations = {
         ru: {
@@ -426,6 +426,9 @@
     }
 
     function applyLanguage() {
+        // Установка атрибута языка у html-документа
+        document.documentElement.lang = currentLang;
+
         // Обновление активных кнопок флагов
         document.getElementById('lang-en').classList.toggle('active', currentLang === 'en');
         document.getElementById('lang-ru').classList.toggle('active', currentLang === 'ru');
