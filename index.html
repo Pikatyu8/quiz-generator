@@ -68,74 +68,111 @@
             margin-right: 5px;
             font-size: 0.95em;
         }
+
+        /* Выбор языка в правом верхнем углу */
+        .lang-selector {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            z-index: 10000;
+            background: #d4d4d4;
+            padding: 5px;
+            border: 2px outset #fff;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+            display: flex;
+            gap: 5px;
+        }
+        .flag-btn {
+            cursor: pointer;
+            font-size: 1.3em;
+            line-height: 1;
+            user-select: none;
+            padding: 2px 5px;
+            border: 2px outset #fff;
+            background-color: #e0e0e0;
+        }
+        .flag-btn:active {
+            border-style: inset;
+        }
+        .flag-btn.active {
+            border-style: inset;
+            background-color: #ccc;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
 
     <!-- НАВИГАЦИЯ СЛЕВА СВЕРХУ -->
     <div class="top-nav">
-        <button id="btn-view-constructor" onclick="switchView('constructor')" style="border-style: inset; font-weight: bold;">[ Конструктор ]</button>
-        <button id="btn-view-quiz" onclick="switchView('quiz')">[ Пройти тест ]</button>
+        <button id="btn-view-constructor" onclick="switchView('constructor')" style="border-style: inset; font-weight: bold;" data-i18n="nav_constructor">[ Конструктор ]</button>
+        <button id="btn-view-quiz" onclick="switchView('quiz')" data-i18n="nav_quiz">[ Пройти тест ]</button>
+    </div>
+
+    <!-- ВЫБОР ЯЗЫКА СПРАВА СВЕРХУ -->
+    <div class="lang-selector">
+        <span onclick="setLanguage('en')" class="flag-btn" id="lang-en" title="English">🇺🇸</span>
+        <span onclick="setLanguage('ru')" class="flag-btn" id="lang-ru" title="Русский">🇷🇺</span>
     </div>
 
     <!-- ============================================== -->
     <!-- ВЬЮ 1: КОНСТРУКТОР ТЕСТОВ -->
     <!-- ============================================== -->
     <div id="view-constructor" style="display: block;">
-        <h1>Конструктор политических/ценностных тестов</h1>
+        <h1 data-i18n="const_heading">Конструктор политических/ценностных тестов</h1>
 
         <fieldset style="background-color: #fff8f8;">
-            <legend>Редактирование готового теста</legend>
-            <p>Вы можете загрузить ранее экспортированный файл <code>questions.json</code>, чтобы изменить его:</p>
+            <legend data-i18n="legend_import">Редактирование готового теста</legend>
+            <p data-i18n="import_desc">Вы можете загрузить ранее экспортированный файл <code>questions.json</code>, чтобы изменить его:</p>
             <input type="file" id="import-selector" accept=".json" onchange="importJSON(event)">
         </fieldset>
         
         <fieldset>
-            <legend>1. Метаданные теста</legend>
+            <legend data-i18n="legend_meta">1. Метаданные теста</legend>
             <div class="row">
-                <label>Название теста:</label><br>
-                <input type="text" id="test-title-input" size="60" placeholder="Например: TransValues">
+                <label data-i18n="label_title">Название теста:</label><br>
+                <input type="text" id="test-title-input" size="60" placeholder="Например: TransValues" data-i18n-placeholder="placeholder_title">
             </div>
             <div class="row">
-                <label>Описание:</label><br>
-                <textarea id="test-desc-input" rows="3" cols="62" placeholder="Опишите суть теста..."></textarea>
+                <label data-i18n="label_desc">Описание:</label><br>
+                <textarea id="test-desc-input" rows="3" cols="62" placeholder="Опишите суть теста..." data-i18n-placeholder="placeholder_desc"></textarea>
             </div>
         </fieldset>
 
         <fieldset>
-            <legend>2. Шкалы и полюса (Оси)</legend>
-            <p><i>Добавьте шкалы. Первые две 2-полюсные шкалы автоматически сформируют 2D Компас (ось X и ось Y). Остальные 2-полюсные шкалы станут слайдерами, а 3-полюсные — треугольниками.</i></p>
+            <legend data-i18n="legend_scales">2. Шкалы и полюса (Оси)</legend>
+            <p data-i18n="scales_desc"><i>Добавьте шкалы. Первые две 2-полюсные шкалы автоматически сформируют 2D Компас (ось X и ось Y). Остальные 2-полюсные шкалы станут слайдерами, а 3-полюсные — треугольниками.</i></p>
             
             <div class="row" style="background: #eee; padding: 8px; border: 1px solid #ccc;">
-                <strong>Создать шкалу:</strong> &nbsp;
-                <input type="text" id="new-scale-id" placeholder="ID (напр. socials)" size="15">
+                <strong data-i18n="label_create_scale">Создать шкалу:</strong> &nbsp;
+                <input type="text" id="new-scale-id" placeholder="ID (напр. socials)" size="15" data-i18n-placeholder="placeholder_scale_id">
                 <select id="new-scale-type">
-                    <option value="2-pole">2-полюсная (Слайдер / Компас)</option>
-                    <option value="3-pole">3-полюсная (Треугольник)</option>
+                    <option value="2-pole" data-i18n="opt_2pole">2-полюсная (Слайдер / Компас)</option>
+                    <option value="3-pole" data-i18n="opt_3pole">3-полюсная (Треугольник)</option>
                 </select>
-                <button onclick="addScale()">+ Добавить</button>
+                <button onclick="addScale()" data-i18n="btn_add">+ Добавить</button>
             </div>
 
             <div id="scales-list"></div>
         </fieldset>
 
         <fieldset>
-            <legend>3. Предпросмотр графиков результатов</legend>
-            <p><i>Ниже показано, как будут выглядеть ваши графики на странице результатов:</i></p>
+            <legend data-i18n="legend_previews">3. Предпросмотр графиков результатов</legend>
+            <p data-i18n="previews_desc"><i>Ниже показано, как будут выглядеть ваши графики на странице результатов:</i></p>
             <div id="previews-container" style="min-height: 100px;">
-                <p style="color: gray;">(Добавьте шкалы, чтобы увидеть превью графиков)</p>
+                <p style="color: gray;" data-i18n="previews_empty">(Добавьте шкалы, чтобы увидеть превью графиков)</p>
             </div>
         </fieldset>
 
         <fieldset>
-            <legend>4. Вопросы и веса</legend>
-            <p><i>Задайте влияние ответов на полюса шкал. Для 2-полюсных шкал положительное число склоняет к правому полюсу, отрицательное — к левому. Для 3-полюсных шкал веса настраиваются отдельно для каждого полюса.</i></p>
-            <button onclick="addQuestion()">+ Добавить вопрос</button>
+            <legend data-i18n="legend_q_weights">4. Вопросы и веса</legend>
+            <p data-i18n="q_weights_desc"><i>Задайте влияние ответов на полюса шкал. Для 2-полюсных шкал положительное число склоняет к правому полюсу, отрицательное — к левому. Для 3-полюсных шкал веса настраиваются отдельно для каждого полюса.</i></p>
+            <button onclick="addQuestion()" data-i18n="btn_add_q">+ Добавить вопрос</button>
             <table id="questions-table">
                 <thead>
                     <tr id="q-headers">
-                        <th>Текст вопроса</th>
-                        <th>Удалить</th>
+                        <th style="width: 40%;" data-i18n="th_q_text">Текст вопроса</th>
+                        <th data-i18n="th_delete">Удалить</th>
                     </tr>
                 </thead>
                 <tbody id="q-body"></tbody>
@@ -143,10 +180,10 @@
         </fieldset>
 
         <fieldset style="text-align: center; background-color: #f5fafd;">
-            <legend>5. Экспорт и быстрое тестирование</legend>
-            <p>Вы можете скачать структуру в файл или запустить тестирование текущей конфигурации без скачивания:</p>
-            <button class="export-btn" onclick="exportJSON()">⬇ Скачать questions.json</button> &nbsp;
-            <button class="export-btn" style="background-color: #e2fcd5;" onclick="testCurrentConfig()">▶ Пройти созданный тест</button>
+            <legend data-i18n="legend_export">5. Экспорт и быстрое тестирование</legend>
+            <p data-i18n="export_desc">Вы можете скачать структуру в файл или запустить тестирование текущей конфигурации без скачивания:</p>
+            <button class="export-btn" onclick="exportJSON()" data-i18n="btn_download">⬇ Скачать questions.json</button> &nbsp;
+            <button class="export-btn" style="background-color: #e2fcd5;" onclick="testCurrentConfig()" data-i18n="btn_quick_test">▶ Пройти созданный тест</button>
         </fieldset>
     </div>
 
@@ -154,30 +191,30 @@
     <!-- ВЬЮ 2: ПРОХОЖДЕНИЕ ТЕСТА -->
     <!-- ============================================== -->
     <div id="view-quiz" style="display: none;">
-        <h1 id="test-title">Загрузка теста...</h1>
+        <h1 id="test-title" data-i18n="loading_test">Загрузка теста...</h1>
         <p id="test-description" style="font-style: italic; color: #555;"></p>
 
-        <!-- ЭКРАН 1: ЗАГРУЗКА И ВЫБОР ФАЙЛА (ЕСЛИ НЕТ questions.json НА СЕРВЕРЕ) -->
+        <!-- ЭКРАН 1: ЗАГРУЗКА И ВЫБОР ФАЙЛА -->
         <fieldset id="screen-loader" style="display: none;">
-            <legend>Выбор файла теста</legend>
-            <p>Не удалось автоматически найти файл <code>questions.json</code>.</p>
-            <p>Пожалуйста, выберите экспортированный файл структуры теста для прохождения:</p>
+            <legend data-i18n="legend_select_file">Выбор файла теста</legend>
+            <p data-i18n="loader_err">Не удалось автоматически найти файл <code>questions.json</code>.</p>
+            <p data-i18n="loader_choose">Пожалуйста, выберите экспортированный файл структуры теста для прохождения:</p>
             <input type="file" id="file-selector" accept=".json" onchange="loadFromFile(event)">
         </fieldset>
 
         <!-- ЭКРАН 2: СТАРТОВЫЙ ЭКРАН -->
         <fieldset id="screen-start" style="display: none;">
-            <legend>Добро пожаловать</legend>
-            <p>Вам будет предложено ответить на ряд утверждений. Пожалуйста, выбирайте максимально близкий вам вариант ответа.</p>
+            <legend data-i18n="legend_welcome">Добро пожаловать</legend>
+            <p data-i18n="welcome_desc">Вам будет предложено ответить на ряд утверждений. Пожалуйста, выбирайте максимально близкий вам вариант ответа.</p>
             
             <div style="margin: 15px 0; text-align: center;">
                 <label style="font-size: 1.15em; cursor: pointer;">
-                    <input type="checkbox" id="shuffle-checkbox" style="transform: scale(1.2); cursor: pointer;"> &nbsp;Перемешать вопросы
+                    <input type="checkbox" id="shuffle-checkbox" style="transform: scale(1.2); cursor: pointer;"> &nbsp;<span data-i18n="shuffle_qs">Перемешать вопросы</span>
                 </label>
             </div>
 
             <div class="center-content">
-                <button onclick="startQuiz()" style="font-size: 1.3em; font-weight: bold; padding: 10px 20px;">Начать тест</button>
+                <button onclick="startQuiz()" style="font-size: 1.3em; font-weight: bold; padding: 10px 20px;" data-i18n="btn_start">Начать тест</button>
             </div>
         </fieldset>
 
@@ -186,26 +223,258 @@
             <legend id="question-index">Вопрос 1 из X</legend>
             <h3 id="question-text" style="border: none; min-height: 50px;">Текст вопроса...</h3>
             
-            <button class="quiz-btn" onclick="answerQuestion(1.0)">Полностью согласен</button>
-            <button class="quiz-btn" onclick="answerQuestion(0.7)">Скорее согласен</button>
-            <button class="quiz-btn" onclick="answerQuestion(0.0)">Не знаю / Нейтрально</button>
-            <button class="quiz-btn" onclick="answerQuestion(-0.7)">Скорее не согласен</button>
-            <button class="quiz-btn" onclick="answerQuestion(-1.0)">Полностью не согласен</button>
+            <button class="quiz-btn" onclick="answerQuestion(1.0)" data-i18n="btn_strongly_agree">Полностью согласен</button>
+            <button class="quiz-btn" onclick="answerQuestion(0.7)" data-i18n="btn_agree">Скорее согласен</button>
+            <button class="quiz-btn" onclick="answerQuestion(0.0)" data-i18n="btn_neutral">Не знаю / Нейтрально</button>
+            <button class="quiz-btn" onclick="answerQuestion(-0.7)" data-i18n="btn_disagree">Скорее не согласен</button>
+            <button class="quiz-btn" onclick="answerQuestion(-1.0)" data-i18n="btn_strongly_disagree">Полностью не согласен</button>
 
-            <button class="back-btn" id="btn-back" onclick="previousQuestion()">← Назад</button>
+            <button class="back-btn" id="btn-back" onclick="previousQuestion()" data-i18n="btn_back">← Назад</button>
         </fieldset>
 
         <!-- ЭКРАН 4: РЕЗУЛЬТАТЫ -->
         <fieldset id="screen-results" style="display: none;">
-            <legend>Ваши результаты</legend>
+            <legend data-i18n="legend_results">Ваши результаты</legend>
             <div id="results-charts"></div>
             <div class="center-content" style="margin-top: 20px;">
-                <button onclick="restartQuiz()">Пройти заново</button>
+                <button onclick="restartQuiz()" data-i18n="btn_restart">Пройти заново</button>
             </div>
         </fieldset>
     </div>
 
 <script>
+    // =========================================================================
+    // ЛОКАЛИЗАЦИЯ (i18n)
+    // =========================================================================
+    let currentLang = 'ru';
+
+    const translations = {
+        ru: {
+            page_title: "Political/Values Test Creator & Runner",
+            nav_constructor: "[ Конструктор ]",
+            nav_quiz: "[ Пройти тест ]",
+            
+            const_heading: "Конструктор политических/ценностных тестов",
+            legend_import: "Редактирование готового теста",
+            import_desc: "Вы можете загрузить ранее экспортированный файл <code>questions.json</code>, чтобы изменить его:",
+            
+            legend_meta: "1. Метаданные теста",
+            label_title: "Название теста:",
+            placeholder_title: "Например: TransValues",
+            label_desc: "Описание:",
+            placeholder_desc: "Опишите суть теста...",
+            
+            legend_scales: "2. Шкалы и полюса (Оси)",
+            scales_desc: "Добавьте шкалы. Первые две 2-полюсные шкалы автоматически сформируют 2D Компас (ось X и ось Y). Остальные 2-полюсные шкалы станут слайдерами, а 3-полюсные — треугольниками.",
+            label_create_scale: "Создать шкалу:",
+            placeholder_scale_id: "ID (напр. socials)",
+            opt_2pole: "2-полюсная (Слайдер / Компас)",
+            opt_3pole: "3-полюсная (Треугольник)",
+            btn_add: "+ Добавить",
+            
+            legend_previews: "3. Предпросмотр графиков результатов",
+            previews_desc: "Ниже показано, как будут выглядеть ваши графики на странице результатов:",
+            previews_empty: "(Добавьте шкалы, чтобы увидеть превью графиков)",
+            
+            legend_q_weights: "4. Вопросы и веса",
+            q_weights_desc: "Задайте влияние ответов на полюса шкал. Для 2-полюсных шкал положительное число склоняет к правому полюсу, отрицательное — к левому. Для 3-полюсных шкал веса настраиваются отдельно для каждого полюса.",
+            btn_add_q: "+ Добавить вопрос",
+            
+            th_q_text: "Текст вопроса",
+            th_delete: "Удалить",
+            placeholder_statement: "Введите утверждение...",
+            
+            legend_export: "5. Экспорт и быстрое тестирование",
+            export_desc: "Вы можете скачать структуру в файл или запустить тестирование текущей конфигурации без скачивания:",
+            btn_download: "⬇ Скачать questions.json",
+            btn_quick_test: "▶ Пройти созданный тест",
+            
+            loading_test: "Загрузка теста...",
+            test_not_loaded: "Тест не загружен",
+            legend_select_file: "Выбор файла теста",
+            loader_err: "Не удалось автоматически найти файл <code>questions.json</code>.",
+            loader_choose: "Пожалуйста, выберите экспортированный файл структуры теста для прохождения:",
+            legend_welcome: "Добро пожаловать",
+            welcome_desc: "Вам будет предложено ответить на ряд утверждений. Пожалуйста, выбирайте максимально близкий вам вариант ответа.",
+            shuffle_qs: "Перемешать вопросы",
+            btn_start: "Начать тест",
+            
+            btn_strongly_agree: "Полностью согласен",
+            btn_agree: "Скорее согласен",
+            btn_neutral: "Не знаю / Нейтрально",
+            btn_disagree: "Скорее не согласен",
+            btn_strongly_disagree: "Полностью не согласен",
+            btn_back: "← Назад",
+            
+            legend_results: "Ваши результаты",
+            btn_restart: "Пройти заново",
+            
+            // Сообщения и динамические элементы в JS
+            js_alert_id_error: "ID должен содержать только латинские буквы, цифры или подчеркивания!",
+            js_alert_exists: "Шкала с таким ID уже существует!",
+            js_alert_import_success: "Конфигурация теста успешно импортирована!",
+            js_alert_import_error: "Ошибка чтения JSON-файла!",
+            js_alert_empty_scales: "Сначала создайте хотя бы одну шкалу и добавьте вопросы!",
+            js_delete_scale: "Удалить шкалу",
+            js_id: "ID",
+            js_type: "Тип",
+            js_pole: "Полюс",
+            js_compass_heading: "Автоматический 2D Компас",
+            js_axis_x: "Ось X",
+            js_axis_y: "Ось Y",
+            js_slider: "Слайдер",
+            js_triangle: "Треугольник",
+            js_compass_results: "Результаты на компасе",
+            js_balance: "Баланс сил",
+            js_q_index: "Вопрос {current} из {total}",
+            js_default_top: "Верх",
+            js_default_left: "Низ-Лево",
+            js_default_right: "Низ-Право",
+            js_default_pole_a: "Полюс А (Левый)",
+            js_default_pole_b: "Полюс Б (Правый)",
+            js_untitled_test: "Тест без названия"
+        },
+        en: {
+            page_title: "Political/Values Test Creator & Runner",
+            nav_constructor: "[ Constructor ]",
+            nav_quiz: "[ Take Quiz ]",
+            
+            const_heading: "Political/Values Test Creator",
+            legend_import: "Edit Ready-made Test",
+            import_desc: "You can load a previously exported <code>questions.json</code> file to edit it:",
+            
+            legend_meta: "1. Test Metadata",
+            label_title: "Test title:",
+            placeholder_title: "e.g. TransValues",
+            label_desc: "Description:",
+            placeholder_desc: "Describe the purpose of the test...",
+            
+            legend_scales: "2. Scales and Poles (Axes)",
+            scales_desc: "Add scales. The first two 2-pole scales will automatically form a 2D Compass (X-axis and Y-axis). Other 2-pole scales will become sliders, and 3-pole scales will become triangles.",
+            label_create_scale: "Create scale:",
+            placeholder_scale_id: "ID (e.g. socials)",
+            opt_2pole: "2-pole (Slider / Compass)",
+            opt_3pole: "3-pole (Triangle)",
+            btn_add: "+ Add",
+            
+            legend_previews: "3. Result Chart Previews",
+            previews_desc: "Below is how your charts will look on the results page:",
+            previews_empty: "(Add scales to see chart previews)",
+            
+            legend_q_weights: "4. Questions and Weights",
+            q_weights_desc: "Define the impact of answers on the poles. For 2-pole scales, a positive number leans towards the right pole, a negative one towards the left. For 3-pole scales, weights are configured separately for each pole.",
+            btn_add_q: "+ Add Question",
+            
+            th_q_text: "Question Text",
+            th_delete: "Delete",
+            placeholder_statement: "Enter statement...",
+            
+            legend_export: "5. Export & Quick Testing",
+            export_desc: "You can download the structure as a file or run the quiz for the current configuration without downloading:",
+            btn_download: "⬇ Download questions.json",
+            btn_quick_test: "▶ Play Created Test",
+            
+            loading_test: "Loading quiz...",
+            test_not_loaded: "Quiz not loaded",
+            legend_select_file: "Select Quiz File",
+            loader_err: "Could not automatically find the <code>questions.json</code> file.",
+            loader_choose: "Please choose an exported test structure file to start:",
+            legend_welcome: "Welcome",
+            welcome_desc: "You will be asked to respond to a series of statements. Please choose the option that is closest to your views.",
+            shuffle_qs: "Shuffle questions",
+            btn_start: "Start Quiz",
+            
+            btn_strongly_agree: "Strongly agree",
+            btn_agree: "Agree",
+            btn_neutral: "Neutral / Don't know",
+            btn_disagree: "Disagree",
+            btn_strongly_disagree: "Strongly disagree",
+            btn_back: "← Back",
+            
+            legend_results: "Your Results",
+            btn_restart: "Restart Quiz",
+            
+            // Сообщения и динамические элементы в JS
+            js_alert_id_error: "ID must contain only Latin letters, numbers, or underscores!",
+            js_alert_exists: "A scale with this ID already exists!",
+            js_alert_import_success: "Test configuration imported successfully!",
+            js_alert_import_error: "Error reading JSON file!",
+            js_alert_empty_scales: "Please create at least one scale and add questions first!",
+            js_delete_scale: "Delete scale",
+            js_id: "ID",
+            js_type: "Type",
+            js_pole: "Pole",
+            js_compass_heading: "Automatic 2D Compass",
+            js_axis_x: "X Axis",
+            js_axis_y: "Y Axis",
+            js_slider: "Slider",
+            js_triangle: "Triangle",
+            js_compass_results: "Compass Results",
+            js_balance: "Balance of Power",
+            js_q_index: "Question {current} of {total}",
+            js_default_top: "Top",
+            js_default_left: "Bottom-Left",
+            js_default_right: "Bottom-Right",
+            js_default_pole_a: "Pole A (Left)",
+            js_default_pole_b: "Pole B (Right)",
+            js_untitled_test: "Untitled Test"
+        }
+    };
+
+    function t(key) {
+        return translations[currentLang][key] || key;
+    }
+
+    function applyLanguage() {
+        // Обновление активных кнопок флагов
+        document.getElementById('lang-en').classList.toggle('active', currentLang === 'en');
+        document.getElementById('lang-ru').classList.toggle('active', currentLang === 'ru');
+
+        // Локализация статических текстовых элементов с атрибутом data-i18n
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            el.innerHTML = t(key);
+        });
+
+        // Локализация плейсхолдеров
+        document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+            const key = el.getAttribute('data-i18n-placeholder');
+            el.placeholder = t(key);
+        });
+
+        // Замена метаданных по умолчанию в случае, если пользователь их не вводил
+        const titleInput = document.getElementById('test-title-input');
+        if (titleInput && (!titleInput.value || titleInput.value === "Тест без названия" || titleInput.value === "Untitled Test")) {
+            titleInput.value = t('js_untitled_test');
+        }
+
+        // Синхронизация и перерисовка динамических частей конструктора
+        updateScalesUI();
+        updateQuestionsTableHeaders();
+        renderQuestions();
+        renderPreviews();
+
+        // Если тест не загружен, выводим заглушку в плеере
+        if (!testData) {
+            document.getElementById('test-title').innerText = t('test_not_loaded');
+        }
+
+        // Обновление интерфейса прохождения (если запущен)
+        if (document.getElementById('screen-quiz').style.display === 'block') {
+            showQuestion();
+        }
+
+        // Обновление результатов (если запущены)
+        if (document.getElementById('screen-results').style.display === 'block') {
+            showResults();
+        }
+    }
+
+    function setLanguage(lang) {
+        currentLang = lang;
+        applyLanguage();
+    }
+
     // =========================================================================
     // ГЛОБАЛЬНЫЕ ДАННЫЕ И НАВИГАЦИЯ
     // =========================================================================
@@ -252,9 +521,9 @@
             try {
                 const data = JSON.parse(e.target.result);
                 loadTestIntoState(data);
-                alert("Конфигурация теста успешно импортирована!");
+                alert(t('js_alert_import_success'));
             } catch(err) {
-                alert("Ошибка чтения JSON-файла!");
+                alert(t('js_alert_import_error'));
                 console.error(err);
             }
         };
@@ -293,25 +562,25 @@
         const type = typeSelect.value;
 
         if (!id || !/^[a-z0-9_]+$/.test(id)) {
-            alert("ID должен содержать только латинские буквы, цифры или подчеркивания!");
+            alert(t('js_alert_id_error'));
             return;
         }
         if (state.scales.find(s => s.id === id)) {
-            alert("Шкала с таким ID уже существует!");
+            alert(t('js_alert_exists'));
             return;
         }
 
         let poles = [];
         if (type === '2-pole') {
             poles = [
-                { name: 'Полюс А (Левый)', color: '#ffaaaa' },
-                { name: 'Полюс Б (Правый)', color: '#aaaaff' }
+                { name: t('js_default_pole_a'), color: '#ffaaaa' },
+                { name: t('js_default_pole_b'), color: '#aaaaff' }
             ];
         } else {
             poles = [
-                { name: 'Верх', color: '#ff0000' },
-                { name: 'Низ-Лево', color: '#0000ff' },
-                { name: 'Низ-Право', color: '#00ff00' }
+                { name: t('js_default_top'), color: '#ff0000' },
+                { name: t('js_default_left'), color: '#0000ff' },
+                { name: t('js_default_right'), color: '#00ff00' }
             ];
         }
 
@@ -327,6 +596,7 @@
 
     function updateScalesUI() {
         const container = document.getElementById('scales-list');
+        if (!container) return;
         container.innerHTML = '';
 
         state.scales.forEach((scale, sIdx) => {
@@ -337,7 +607,7 @@
             scale.poles.forEach((pole, pIdx) => {
                 polesHtml += `
                     <div class="pole-input">
-                        <label>Полюс ${pIdx + 1}:</label>
+                        <label>${t('js_pole')} ${pIdx + 1}:</label>
                         <input type="text" value="${pole.name}" oninput="updatePoleName(${sIdx}, ${pIdx}, this.value)" size="15">
                         <input type="color" value="${pole.color}" onchange="updatePoleColor(${sIdx}, ${pIdx}, this.value)">
                     </div>
@@ -345,9 +615,9 @@
             });
 
             card.innerHTML = `
-                <div style="float: right;"><button onclick="removeScale(${sIdx})">Удалить шкалу</button></div>
-                <strong>ID:</strong> <code>${scale.id}</code> | 
-                <strong>Тип:</strong> ${scale.type === '2-pole' ? '2-полюсная (Слайдер)' : '3-полюсная (Треугольник)'}<br><br>
+                <div style="float: right;"><button onclick="removeScale(${sIdx})">${t('js_delete_scale')}</button></div>
+                <strong>${t('js_id')}:</strong> <code>${scale.id}</code> | 
+                <strong>${t('js_type')}:</strong> ${scale.type === '2-pole' ? t('opt_2pole') : t('opt_3pole')}<br><br>
                 ${polesHtml}
             `;
             container.appendChild(card);
@@ -377,10 +647,11 @@
 
     function renderPreviews() {
         const container = document.getElementById('previews-container');
+        if (!container) return;
         container.innerHTML = '';
 
         if (state.scales.length === 0) {
-            container.innerHTML = '<p style="color: gray;">(Добавьте шкалы, чтобы увидеть превью графиков)</p>';
+            container.innerHTML = `<p style="color: gray;">${t('previews_empty')}</p>`;
             return;
         }
 
@@ -393,9 +664,9 @@
             div.style.display = 'inline-block';
             div.style.margin = '10px';
             div.innerHTML = `
-                <strong>Автоматический 2D Компас</strong><br>
-                Ось X: ${sX.poles[0].name} ↔ ${sX.poles[1].name}<br>
-                Ось Y: ${sY.poles[0].name} ↔ ${sY.poles[1].name}<br>
+                <strong>${t('js_compass_heading')}</strong><br>
+                ${t('js_axis_x')}: ${sX.poles[0].name} ↔ ${sX.poles[1].name}<br>
+                ${t('js_axis_y')}: ${sY.poles[0].name} ↔ ${sY.poles[1].name}<br>
                 <canvas id="compass_canvas" width="220" height="220" class="canvas-preview"></canvas>
             `;
             container.appendChild(div);
@@ -413,7 +684,7 @@
                 div.style.display = 'inline-block';
                 div.style.margin = '10px';
                 div.innerHTML = `
-                    <strong>Слайдер: ${scale.id}</strong><br>
+                    <strong>${t('js_slider')}: ${scale.id}</strong><br>
                     ${scale.poles[0].name} ↔ ${scale.poles[1].name}<br>
                     <canvas id="slider_${scale.id}" width="220" height="40" class="canvas-preview"></canvas>
                 `;
@@ -424,7 +695,7 @@
                 div.style.display = 'inline-block';
                 div.style.margin = '10px';
                 div.innerHTML = `
-                    <strong>Треугольник: ${scale.id}</strong><br>
+                    <strong>${t('js_triangle')}: ${scale.id}</strong><br>
                     <sup>▲ ${scale.poles[0].name}</sup><br>
                     <sub>◀ ${scale.poles[1].name} | ▶ ${scale.poles[2].name}</sub><br>
                     <canvas id="tri_${scale.id}" width="180" height="160" class="canvas-preview"></canvas>
@@ -536,7 +807,8 @@
 
     function updateQuestionsTableHeaders() {
         const tr = document.getElementById('q-headers');
-        let html = '<th style="width: 40%;">Текст вопроса</th>';
+        if (!tr) return;
+        let html = `<th style="width: 40%;">${t('th_q_text')}</th>`;
         
         state.scales.forEach(scale => {
             if (scale.type === '2-pole') {
@@ -548,7 +820,7 @@
             }
         });
         
-        html += '<th>Удалить</th>';
+        html += `<th>${t('th_delete')}</th>`;
         tr.innerHTML = html;
     }
 
@@ -585,11 +857,12 @@
 
     function renderQuestions() {
         const tbody = document.getElementById('q-body');
+        if (!tbody) return;
         tbody.innerHTML = '';
 
         state.questions.forEach((q, qIdx) => {
             const tr = document.createElement('tr');
-            let html = `<td><input type="text" style="width: 95%;" value="${q.text}" oninput="updateQText(${qIdx}, this.value)" placeholder="Введите утверждение..."></td>`;
+            let html = `<td><input type="text" style="width: 95%;" value="${q.text}" oninput="updateQText(${qIdx}, this.value)" placeholder="${t('placeholder_statement')}"></td>`;
             
             state.scales.forEach(scale => {
                 if (scale.type === '2-pole') {
@@ -613,7 +886,7 @@
 
     function getExportData() {
         return {
-            title: document.getElementById('test-title-input').value || "Тест без названия",
+            title: document.getElementById('test-title-input').value || t('js_untitled_test'),
             description: document.getElementById('test-desc-input').value || "",
             scales: state.scales,
             q: state.questions.map(q => ({
@@ -635,7 +908,7 @@
     // БЫСТРОЕ ТЕСТИРОВАНИЕ КОНФИГУРАЦИИ ИЗ КОНСТРУКТОРА
     function testCurrentConfig() {
         if (state.scales.length === 0) {
-            alert("Сначала создайте хотя бы одну шкалу и добавьте вопросы!");
+            alert(t('js_alert_empty_scales'));
             return;
         }
         const currentData = getExportData();
@@ -649,6 +922,8 @@
     // =========================================================================
     
     window.addEventListener('DOMContentLoaded', () => {
+        applyLanguage();
+
         fetch('questions.json')
             .then(response => {
                 if (!response.ok) throw new Error("HTTP error " + response.status);
@@ -658,9 +933,9 @@
                 loadTestIntoState(data);
             })
             .catch(err => {
-                console.log("Локальный файл questions.json не найден, тест ждет загрузки вручную:", err);
+                console.log("Локальный файл questions.json не найден, тест ждет загрузки вручную / Local questions.json not found:", err);
                 document.getElementById('screen-loader').style.display = 'block';
-                document.getElementById('test-title').innerText = "Тест не загружен";
+                document.getElementById('test-title').innerText = t('test_not_loaded');
             });
     });
 
@@ -673,7 +948,7 @@
                 const data = JSON.parse(e.target.result);
                 loadTestIntoState(data);
             } catch(err) {
-                alert("Ошибка чтения JSON файла!");
+                alert(t('js_alert_import_error'));
             }
         };
         reader.readAsText(file);
@@ -681,7 +956,7 @@
 
     function initTestData(data) {
         testData = data;
-        document.getElementById('test-title').innerText = data.title || "Без названия";
+        document.getElementById('test-title').innerText = data.title || t('js_untitled_test');
         document.getElementById('test-description').innerText = data.description || "";
         
         document.getElementById('screen-loader').style.display = 'none';
@@ -716,7 +991,11 @@
         const actualIdx = shuffledIndices[currentQuestionIdx];
         const q = testData.q[actualIdx];
         
-        document.getElementById('question-index').innerText = `Вопрос ${currentQuestionIdx + 1} из ${testData.q.length}`;
+        const qIdxText = t('js_q_index')
+            .replace('{current}', currentQuestionIdx + 1)
+            .replace('{total}', testData.q.length);
+
+        document.getElementById('question-index').innerText = qIdxText;
         document.getElementById('question-text').innerText = q.question;
         
         document.getElementById('btn-back').style.visibility = (currentQuestionIdx === 0) ? 'hidden' : 'visible';
@@ -765,7 +1044,7 @@
             const wrapper = document.createElement('div');
             wrapper.className = 'canvas-container';
             wrapper.innerHTML = `
-                <h3>Результаты на компасе</h3>
+                <h3>${t('js_compass_results')}</h3>
                 <div class="score-info">
                     ${sX.poles[0].name}: <b>${(100 - scoreX).toFixed(1)}%</b> | ${sX.poles[1].name}: <b>${scoreX.toFixed(1)}%</b><br>
                     ${sY.poles[0].name}: <b>${(100 - scoreY).toFixed(1)}%</b> | ${sY.poles[1].name}: <b>${scoreY.toFixed(1)}%</b>
@@ -799,7 +1078,7 @@
                 const wrapper = document.createElement('div');
                 wrapper.className = 'canvas-container';
                 wrapper.innerHTML = `
-                    <h3>Баланс сил (${scale.id})</h3>
+                    <h3>${t('js_balance')} (${scale.id})</h3>
                     <div class="score-info">
                         ${scale.poles[0].name}: <b>${scoreTri.top.toFixed(1)}%</b> | 
                         ${scale.poles[1].name}: <b>${scoreTri.left.toFixed(1)}%</b> | 
