@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Political/Values Test Creator & Runner</title>
+    <style>
+        /* Базовые стили 90-х */
+        body {
+            font-family: "Times New Roman", Times, serif;
+            background-color: #ffffff;
+            color: #000000;
+            padding: 20px;
+            padding-top: 60px; /* Отступ под фиксированное меню сверху */
+            max-width: 950px;
+            margin: 0 auto;
+        }
+        h1, h2, h3 { border-bottom: 2px solid #000; padding-bottom: 5px; }
+        fieldset { margin-bottom: 20px; border: 2px groove #ccc; padding: 15px; }
+        legend { font-weight: bold; padding: 0 5px; }
+        
+        button {
+            background-color: #e0e0e0;
+            border: 2px outset #fff;
+            padding: 4px 10px;
+            cursor: pointer;
+            color: black;
+            font-family: inherit;
+        }
+        button:active { border-style: inset; }
+        
+        input[type="text"], input[type="number"], textarea, select {
+            border: 2px inset #ccc;
+            padding: 3px;
+            font-family: inherit;
+        }
+        
+        /* Таблицы и канвасы */
+        .canvas-preview, .canvas-render { border: 1px solid #000; margin-top: 10px; display: inline-block; vertical-align: top; }
+        .row { margin-bottom: 12px; }
+        table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+        table, th, td { border: 1px solid black; padding: 5px; text-align: center; }
+        th { background-color: #ccc; }
+        
+        /* Специфично для конструктора */
+        .export-btn { font-size: 1.1em; font-weight: bold; background-color: #d4e0ff; padding: 8px 16px; }
+        .scale-card { border: 1px solid #000; padding: 10px; margin-bottom: 10px; background-color: #f5f5f5; }
+        .pole-input { display: inline-block; margin-right: 15px; }
+        
+        /* Специфично для прохождения */
+        .quiz-btn { display: block; width: 100%; text-align: left; font-size: 1.1em; margin: 6px 0; padding: 6px 12px; }
+        .back-btn { margin-top: 15px; background-color: #f0f0f0; }
+        .canvas-container { margin: 15px 0; text-align: center; }
+        .score-info { font-size: 1.1em; margin-bottom: 10px; }
+        .center-content { text-align: center; }
+
+        /* Фиксированное меню слева сверху */
+        .top-nav {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            z-index: 10000;
+            background: #d4d4d4;
+            padding: 5px;
+            border: 2px outset #fff;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+        }
+        .top-nav button {
+            margin-right: 5px;
+            font-size: 0.95em;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- НАВИГАЦИЯ СЛЕВА СВЕРХУ -->
+    <div class="top-nav">
+        <button id="btn-view-constructor" onclick="switchView('constructor')" style="border-style: inset; font-weight: bold;">[ Конструктор ]</button>
+        <button id="btn-view-quiz" onclick="switchView('quiz')">[ Пройти тест ]</button>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- ВЬЮ 1: КОНСТРУКТОР ТЕСТОВ -->
+    <!-- ============================================== -->
+    <div id="view-constructor" style="display: block;">
+        <h1>Конструктор политических/ценностных тестов</h1>
+
+        <fieldset style="background-color: #fff8f8;">
+            <legend>Редактирование готового теста</legend>
+            <p>Вы можете загрузить ранее экспортированный файл <code>questions.json</code>, чтобы изменить его:</p>
+            <input type="file" id="import-selector" accept=".json" onchange="importJSON(event)">
+        </fieldset>
+        
+        <fieldset>
+            <legend>1. Метаданные теста</legend>
+            <div class="row">
+                <label>Название теста:</label><br>
+                <input type="text" id="test-title-input" size="60" placeholder="Например: TransValues">
+            </div>
+            <div class="row">
+                <label>Описание:</label><br>
+                <textarea id="test-desc-input" rows="3" cols="62" placeholder="Опишите суть теста..."></textarea>
+            </div>
+        </fieldset>
+
+        <fieldset>
+            <legend>2. Шкалы и полюса (Оси)</legend>
+            <p><i>Добавьте шкалы. Первые две 2-полюсные шкалы автоматически сформируют 2D Компас (ось X и ось Y). Остальные 2-полюсные шкалы станут слайдерами, а 3-полюсные — треугольниками.</i></p>
+            
+            <div class="row" style="background: #eee; padding: 8px; border: 1px solid #ccc;">
+                <strong>Создать шкалу:</strong> &nbsp;
+                <input type="text" id="new-scale-id" placeholder="ID (напр. socials)" size="15">
+                <select id="new-scale-type">
+                    <option value="2-pole">2-полюсная (Слайдер / Компас)</option>
+                    <option value="3-pole">3-полюсная (Треугольник)</option>
+                </select>
+                <button onclick="addScale()">+ Добавить</button>
+            </div>
+
+            <div id="scales-list"></div>
+        </fieldset>
+
+        <fieldset>
+            <legend>3. Предпросмотр графиков результатов</legend>
+            <p><i>Ниже показано, как будут выглядеть ваши графики на странице результатов:</i></p>
+            <div id="previews-container" style="min-height: 100px;">
+                <p style="color: gray;">(Добавьте шкалы, чтобы увидеть превью графиков)</p>
+            </div>
+        </fieldset>
+
+        <fieldset>
+            <legend>4. Вопросы и веса</legend>
+            <p><i>Задайте влияние ответов на полюса шкал. Для 2-полюсных шкал положительное число склоняет к правому полюсу, отрицательное — к левому. Для 3-полюсных шкал веса настраиваются отдельно для каждого полюса.</i></p>
+            <button onclick="addQuestion()">+ Добавить вопрос</button>
+            <table id="questions-table">
+                <thead>
+                    <tr id="q-headers">
+                        <th>Текст вопроса</th>
+                        <th>Удалить</th>
+                    </tr>
+                </thead>
+                <tbody id="q-body"></tbody>
+            </table>
+        </fieldset>
+
+        <fieldset style="text-align: center; background-color: #f5fafd;">
+            <legend>5. Экспорт и быстрое тестирование</legend>
+            <p>Вы можете скачать структуру в файл или запустить тестирование текущей конфигурации без скачивания:</p>
+            <button class="export-btn" onclick="exportJSON()">⬇ Скачать questions.json</button> &nbsp;
+            <button class="export-btn" style="background-color: #e2fcd5;" onclick="testCurrentConfig()">▶ Пройти созданный тест</button>
+        </fieldset>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- ВЬЮ 2: ПРОХОЖДЕНИЕ ТЕСТА -->
+    <!-- ============================================== -->
+    <div id="view-quiz" style="display: none;">
+        <h1 id="test-title">Загрузка теста...</h1>
+        <p id="test-description" style="font-style: italic; color: #555;"></p>
+
+        <!-- ЭКРАН 1: ЗАГРУЗКА И ВЫБОР ФАЙЛА (ЕСЛИ НЕТ questions.json НА СЕРВЕРЕ) -->
+        <fieldset id="screen-loader" style="display: none;">
+            <legend>Выбор файла теста</legend>
+            <p>Не удалось автоматически найти файл <code>questions.json</code>.</p>
+            <p>Пожалуйста, выберите экспортированный файл структуры теста для прохождения:</p>
+            <input type="file" id="file-selector" accept=".json" onchange="loadFromFile(event)">
+        </fieldset>
+
+        <!-- ЭКРАН 2: СТАРТОВЫЙ ЭКРАН -->
+        <fieldset id="screen-start" style="display: none;">
+            <legend>Добро пожаловать</legend>
+            <p>Вам будет предложено ответить на ряд утверждений. Пожалуйста, выбирайте максимально близкий вам вариант ответа.</p>
+            
+            <div style="margin: 15px 0; text-align: center;">
+                <label style="font-size: 1.15em; cursor: pointer;">
+                    <input type="checkbox" id="shuffle-checkbox" style="transform: scale(1.2); cursor: pointer;"> &nbsp;Перемешать вопросы
+                </label>
+            </div>
+
+            <div class="center-content">
+                <button onclick="startQuiz()" style="font-size: 1.3em; font-weight: bold; padding: 10px 20px;">Начать тест</button>
+            </div>
+        </fieldset>
+
+        <!-- ЭКРАН 3: ПРОХОЖДЕНИЕ ВОПРОСОВ -->
+        <fieldset id="screen-quiz" style="display: none;">
+            <legend id="question-index">Вопрос 1 из X</legend>
+            <h3 id="question-text" style="border: none; min-height: 50px;">Текст вопроса...</h3>
+            
+            <button class="quiz-btn" onclick="answerQuestion(1.0)">Полностью согласен</button>
+            <button class="quiz-btn" onclick="answerQuestion(0.7)">Скорее согласен</button>
+            <button class="quiz-btn" onclick="answerQuestion(0.0)">Не знаю / Нейтрально</button>
+            <button class="quiz-btn" onclick="answerQuestion(-0.7)">Скорее не согласен</button>
+            <button class="quiz-btn" onclick="answerQuestion(-1.0)">Полностью не согласен</button>
+
+            <button class="back-btn" id="btn-back" onclick="previousQuestion()">← Назад</button>
+        </fieldset>
+
+        <!-- ЭКРАН 4: РЕЗУЛЬТАТЫ -->
+        <fieldset id="screen-results" style="display: none;">
+            <legend>Ваши результаты</legend>
+            <div id="results-charts"></div>
+            <div class="center-content" style="margin-top: 20px;">
+                <button onclick="restartQuiz()">Пройти заново</button>
+            </div>
+        </fieldset>
+    </div>
+
+<script>
+    // =========================================================================
+    // ГЛОБАЛЬНЫЕ ДАННЫЕ И НАВИГАЦИЯ
+    // =========================================================================
+    const state = {
+        scales: [],      
+        questions: []    
+    };
+
+    let testData = null;
+    let currentQuestionIdx = 0;
+    let shuffledIndices = [];   
+    let userAnswers = [];       
+
+    function switchView(view) {
+        const btnConst = document.getElementById('btn-view-constructor');
+        const btnQuiz = document.getElementById('btn-view-quiz');
+        
+        if (view === 'constructor') {
+            document.getElementById('view-constructor').style.display = 'block';
+            document.getElementById('view-quiz').style.display = 'none';
+            btnConst.style.borderStyle = 'inset';
+            btnConst.style.fontWeight = 'bold';
+            btnQuiz.style.borderStyle = 'outset';
+            btnQuiz.style.fontWeight = 'normal';
+        } else {
+            document.getElementById('view-constructor').style.display = 'none';
+            document.getElementById('view-quiz').style.display = 'block';
+            btnConst.style.borderStyle = 'outset';
+            btnConst.style.fontWeight = 'normal';
+            btnQuiz.style.borderStyle = 'inset';
+            btnQuiz.style.fontWeight = 'bold';
+        }
+    }
+
+    // =========================================================================
+    // ЛОГИКА КОНСТРУКТОРА
+    // =========================================================================
+    
+    function importJSON(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const data = JSON.parse(e.target.result);
+                loadTestIntoState(data);
+                alert("Конфигурация теста успешно импортирована!");
+            } catch(err) {
+                alert("Ошибка чтения JSON-файла!");
+                console.error(err);
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    // Вспомогательная функция наполнения данными конструктора и плеера
+    function loadTestIntoState(data) {
+        if (!data.scales || !data.q) return false;
+
+        // Заполняем форму конструктора
+        document.getElementById('test-title-input').value = data.title || "";
+        document.getElementById('test-desc-input').value = data.description || "";
+        state.scales = data.scales || [];
+        state.questions = (data.q || []).map((item, idx) => ({
+            id: 'q_' + (Date.now() + idx),
+            text: item.question,
+            effects: item.effect
+        }));
+
+        updateScalesUI();
+        updateQuestionsTableHeaders();
+        syncQuestionsWithScales();
+        renderQuestions();
+        renderPreviews();
+
+        // Заполняем структуру для прохождения
+        initTestData(data);
+        return true;
+    }
+
+    function addScale() {
+        const idInput = document.getElementById('new-scale-id');
+        const typeSelect = document.getElementById('new-scale-type');
+        const id = idInput.value.trim().toLowerCase();
+        const type = typeSelect.value;
+
+        if (!id || !/^[a-z0-9_]+$/.test(id)) {
+            alert("ID должен содержать только латинские буквы, цифры или подчеркивания!");
+            return;
+        }
+        if (state.scales.find(s => s.id === id)) {
+            alert("Шкала с таким ID уже существует!");
+            return;
+        }
+
+        let poles = [];
+        if (type === '2-pole') {
+            poles = [
+                { name: 'Полюс А (Левый)', color: '#ffaaaa' },
+                { name: 'Полюс Б (Правый)', color: '#aaaaff' }
+            ];
+        } else {
+            poles = [
+                { name: 'Верх', color: '#ff0000' },
+                { name: 'Низ-Лево', color: '#0000ff' },
+                { name: 'Низ-Право', color: '#00ff00' }
+            ];
+        }
+
+        state.scales.push({ id, type, poles });
+        idInput.value = '';
+
+        updateScalesUI();
+        updateQuestionsTableHeaders();
+        syncQuestionsWithScales();
+        renderQuestions();
+        renderPreviews();
+    }
+
+    function updateScalesUI() {
+        const container = document.getElementById('scales-list');
+        container.innerHTML = '';
+
+        state.scales.forEach((scale, sIdx) => {
+            const card = document.createElement('div');
+            card.className = 'scale-card';
+            
+            let polesHtml = '';
+            scale.poles.forEach((pole, pIdx) => {
+                polesHtml += `
+                    <div class="pole-input">
+                        <label>Полюс ${pIdx + 1}:</label>
+                        <input type="text" value="${pole.name}" oninput="updatePoleName(${sIdx}, ${pIdx}, this.value)" size="15">
+                        <input type="color" value="${pole.color}" onchange="updatePoleColor(${sIdx}, ${pIdx}, this.value)">
+                    </div>
+                `;
+            });
+
+            card.innerHTML = `
+                <div style="float: right;"><button onclick="removeScale(${sIdx})">Удалить шкалу</button></div>
+                <strong>ID:</strong> <code>${scale.id}</code> | 
+                <strong>Тип:</strong> ${scale.type === '2-pole' ? '2-полюсная (Слайдер)' : '3-полюсная (Треугольник)'}<br><br>
+                ${polesHtml}
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    function updatePoleName(sIdx, pIdx, val) {
+        state.scales[sIdx].poles[pIdx].name = val;
+        updateQuestionsTableHeaders();
+        renderQuestions();
+        renderPreviews();
+    }
+
+    function updatePoleColor(sIdx, pIdx, val) {
+        state.scales[sIdx].poles[pIdx].color = val;
+        renderPreviews();
+    }
+
+    function removeScale(idx) {
+        state.scales.splice(idx, 1);
+        updateScalesUI();
+        updateQuestionsTableHeaders();
+        syncQuestionsWithScales();
+        renderQuestions();
+        renderPreviews();
+    }
+
+    function renderPreviews() {
+        const container = document.getElementById('previews-container');
+        container.innerHTML = '';
+
+        if (state.scales.length === 0) {
+            container.innerHTML = '<p style="color: gray;">(Добавьте шкалы, чтобы увидеть превью графиков)</p>';
+            return;
+        }
+
+        const twoPoleScales = state.scales.filter(s => s.type === '2-pole');
+        if (twoPoleScales.length >= 2) {
+            const sX = twoPoleScales[0];
+            const sY = twoPoleScales[1];
+            
+            const div = document.createElement('div');
+            div.style.display = 'inline-block';
+            div.style.margin = '10px';
+            div.innerHTML = `
+                <strong>Автоматический 2D Компас</strong><br>
+                Ось X: ${sX.poles[0].name} ↔ ${sX.poles[1].name}<br>
+                Ось Y: ${sY.poles[0].name} ↔ ${sY.poles[1].name}<br>
+                <canvas id="compass_canvas" width="220" height="220" class="canvas-preview"></canvas>
+            `;
+            container.appendChild(div);
+            drawCompass();
+        }
+
+        let twoPoleCount = 0;
+        state.scales.forEach((scale) => {
+            if (scale.type === '2-pole') {
+                twoPoleCount++;
+                if (twoPoleCount <= 2 && twoPoleScales.length >= 2) {
+                    return; 
+                }
+                const div = document.createElement('div');
+                div.style.display = 'inline-block';
+                div.style.margin = '10px';
+                div.innerHTML = `
+                    <strong>Слайдер: ${scale.id}</strong><br>
+                    ${scale.poles[0].name} ↔ ${scale.poles[1].name}<br>
+                    <canvas id="slider_${scale.id}" width="220" height="40" class="canvas-preview"></canvas>
+                `;
+                container.appendChild(div);
+                drawSlider(`slider_${scale.id}`, scale.poles[0].color, scale.poles[1].color);
+            } else {
+                const div = document.createElement('div');
+                div.style.display = 'inline-block';
+                div.style.margin = '10px';
+                div.innerHTML = `
+                    <strong>Треугольник: ${scale.id}</strong><br>
+                    <sup>▲ ${scale.poles[0].name}</sup><br>
+                    <sub>◀ ${scale.poles[1].name} | ▶ ${scale.poles[2].name}</sub><br>
+                    <canvas id="tri_${scale.id}" width="180" height="160" class="canvas-preview"></canvas>
+                `;
+                container.appendChild(div);
+                drawTriangle(`tri_${scale.id}`, scale.poles[0].color, scale.poles[1].color, scale.poles[2].color);
+            }
+        });
+    }
+
+    function drawCompass() {
+        const c = document.getElementById("compass_canvas");
+        if (!c) return;
+        const ctx = c.getContext("2d");
+        const w = c.width; const h = c.height;
+
+        const twoPoleScales = state.scales.filter(s => s.type === '2-pole');
+        if (twoPoleScales.length < 2) return;
+        const sX = twoPoleScales[0];
+        const sY = twoPoleScales[1];
+
+        const colTL = sX.poles[0].color; 
+        const colTR = sX.poles[1].color; 
+        const colBL = sY.poles[0].color; 
+        const colBR = sY.poles[1].color; 
+
+        ctx.fillStyle = colTL; ctx.fillRect(0, 0, w/2, h/2);
+        ctx.fillStyle = colTR; ctx.fillRect(w/2, 0, w/2, h/2);
+        ctx.fillStyle = colBL; ctx.fillRect(0, h/2, w/2, h/2);
+        ctx.fillStyle = colBR; ctx.fillRect(w/2, h/2, w/2, h/2);
+
+        ctx.strokeStyle = "rgba(0,0,0,0.15)";
+        ctx.lineWidth = 1;
+        const gridSize = w / 20; 
+        for (let i = 0; i <= w; i += gridSize) {
+            ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, h); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(w, i); ctx.stroke();
+        }
+
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(w/2, 0); ctx.lineTo(w/2, h); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, h/2); ctx.lineTo(w, h/2); ctx.stroke();
+
+        ctx.fillStyle = "red";
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath(); 
+        ctx.arc(w/2 - 22, h/2 - 33, 6, 0, Math.PI*2); 
+        ctx.fill();
+        ctx.stroke();
+    }
+
+    function drawSlider(canvasId, colorLeft, colorRight) {
+        const c = document.getElementById(canvasId);
+        if (!c) return;
+        const ctx = c.getContext("2d");
+        let grd = ctx.createLinearGradient(0, 0, c.width, 0);
+        grd.addColorStop(0, colorLeft);
+        grd.addColorStop(1, colorRight);
+        ctx.fillStyle = grd;
+        ctx.fillRect(0, 0, c.width, c.height);
+        
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(c.width/2 - 1, 0, 2, c.height);
+    }
+
+    function drawTriangle(canvasId, colorTop, colorLeft, colorRight) {
+        const c = document.getElementById(canvasId);
+        if (!c) return;
+        const ctx = c.getContext("2d");
+        ctx.clearRect(0, 0, c.width, c.height);
+
+        const rgb1 = hexToRgb(colorTop);
+        const rgb2 = hexToRgb(colorLeft);
+        const rgb3 = hexToRgb(colorRight);
+
+        const x1 = c.width/2, y1 = 10;
+        const x2 = 10, y2 = c.height - 10;
+        const x3 = c.width - 10, y3 = c.height - 10;
+
+        const imgData = ctx.createImageData(c.width, c.height);
+        const data = imgData.data;
+        const det = (y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3);
+
+        for (let y = 0; y < c.height; y++) {
+            for (let x = 0; x < c.width; x++) {
+                let w1 = ((y2 - y3) * (x - x3) + (x3 - x2) * (y - y3)) / det;
+                let w2 = ((y3 - y1) * (x - x3) + (x1 - x3) * (y - y3)) / det;
+                let w3 = 1.0 - w1 - w2;
+
+                if (w1 >= -0.01 && w2 >= -0.01 && w3 >= -0.01) {
+                    w1 = Math.max(0, w1); w2 = Math.max(0, w2); w3 = Math.max(0, w3);
+                    let idx = (y * c.width + x) * 4;
+                    data[idx] = Math.round(w1*rgb1[0] + w2*rgb2[0] + w3*rgb3[0]);
+                    data[idx+1] = Math.round(w1*rgb1[1] + w2*rgb2[1] + w3*rgb3[1]);
+                    data[idx+2] = Math.round(w1*rgb1[2] + w2*rgb2[2] + w3*rgb3[2]);
+                    data[idx+3] = 255;
+                }
+            }
+        }
+        ctx.putImageData(imgData, 0, 0);
+    }
+
+    function hexToRgb(hex) {
+        let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result ? [parseInt(result[1], 16), parseInt(result[2], 16), parseInt(result[3], 16)] : [0,0,0];
+    }
+
+    function updateQuestionsTableHeaders() {
+        const tr = document.getElementById('q-headers');
+        let html = '<th style="width: 40%;">Текст вопроса</th>';
+        
+        state.scales.forEach(scale => {
+            if (scale.type === '2-pole') {
+                html += `<th title="${scale.poles[0].name} ↔ ${scale.poles[1].name}">${scale.id}<br><small>(${scale.poles[1].name})</small></th>`;
+            } else {
+                html += `<th style="background-color:#e2f0d9;">${scale.id}<br><small>▲ ${scale.poles[0].name}</small></th>`;
+                html += `<th style="background-color:#e2f0d9;">${scale.id}<br><small>◀ ${scale.poles[1].name}</small></th>`;
+                html += `<th style="background-color:#e2f0d9;">${scale.id}<br><small>▶ ${scale.poles[2].name}</small></th>`;
+            }
+        });
+        
+        html += '<th>Удалить</th>';
+        tr.innerHTML = html;
+    }
+
+    function addQuestion() {
+        const qObj = { id: 'q_' + Date.now(), text: '', effects: {} };
+        state.scales.forEach(scale => {
+            if (scale.type === '2-pole') {
+                qObj.effects[scale.id] = 0;
+            } else {
+                qObj.effects[`${scale.id}_top`] = 0;
+                qObj.effects[`${scale.id}_left`] = 0;
+                qObj.effects[`${scale.id}_right`] = 0;
+            }
+        });
+        state.questions.push(qObj);
+        renderQuestions();
+    }
+
+    function syncQuestionsWithScales() {
+        state.questions.forEach(q => {
+            const newEffects = {};
+            state.scales.forEach(scale => {
+                if (scale.type === '2-pole') {
+                    newEffects[scale.id] = q.effects[scale.id] !== undefined ? q.effects[scale.id] : 0;
+                } else {
+                    newEffects[`${scale.id}_top`] = q.effects[`${scale.id}_top`] !== undefined ? q.effects[`${scale.id}_top`] : 0;
+                    newEffects[`${scale.id}_left`] = q.effects[`${scale.id}_left`] !== undefined ? q.effects[`${scale.id}_left`] : 0;
+                    newEffects[`${scale.id}_right`] = q.effects[`${scale.id}_right`] !== undefined ? q.effects[`${scale.id}_right`] : 0;
+                }
+            });
+            q.effects = newEffects;
+        });
+    }
+
+    function renderQuestions() {
+        const tbody = document.getElementById('q-body');
+        tbody.innerHTML = '';
+
+        state.questions.forEach((q, qIdx) => {
+            const tr = document.createElement('tr');
+            let html = `<td><input type="text" style="width: 95%;" value="${q.text}" oninput="updateQText(${qIdx}, this.value)" placeholder="Введите утверждение..."></td>`;
+            
+            state.scales.forEach(scale => {
+                if (scale.type === '2-pole') {
+                    html += `<td><input type="number" step="0.5" style="width: 55px;" value="${q.effects[scale.id]}" oninput="updateQEffect(${qIdx}, '${scale.id}', this.value)"></td>`;
+                } else {
+                    html += `<td style="background-color:#f2f9ec;"><input type="number" step="0.5" style="width: 45px;" value="${q.effects[`${scale.id}_top`]}" oninput="updateQEffect(${qIdx}, '${scale.id}_top', this.value)"></td>`;
+                    html += `<td style="background-color:#f2f9ec;"><input type="number" step="0.5" style="width: 45px;" value="${q.effects[`${scale.id}_left`]}" oninput="updateQEffect(${qIdx}, '${scale.id}_left', this.value)"></td>`;
+                    html += `<td style="background-color:#f2f9ec;"><input type="number" step="0.5" style="width: 45px;" value="${q.effects[`${scale.id}_right`]}" oninput="updateQEffect(${qIdx}, '${scale.id}_right', this.value)"></td>`;
+                }
+            });
+
+            html += `<td><button onclick="removeQuestion(${qIdx})">❌</button></td>`;
+            tr.innerHTML = html;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function updateQText(qIdx, val) { state.questions[qIdx].text = val; }
+    function updateQEffect(qIdx, key, val) { state.questions[qIdx].effects[key] = parseFloat(val) || 0; }
+    function removeQuestion(qIdx) { state.questions.splice(qIdx, 1); renderQuestions(); }
+
+    function getExportData() {
+        return {
+            title: document.getElementById('test-title-input').value || "Тест без названия",
+            description: document.getElementById('test-desc-input').value || "",
+            scales: state.scales,
+            q: state.questions.map(q => ({
+                question: q.text,
+                effect: q.effects
+            }))
+        };
+    }
+
+    function exportJSON() {
+        const finalData = getExportData();
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(finalData, null, 4));
+        const dlAnchorElem = document.createElement('a');
+        dlAnchorElem.setAttribute("href", dataStr);
+        dlAnchorElem.setAttribute("download", "questions.json");
+        dlAnchorElem.click();
+    }
+
+    // БЫСТРОЕ ТЕСТИРОВАНИЕ КОНФИГУРАЦИИ ИЗ КОНСТРУКТОРА
+    function testCurrentConfig() {
+        if (state.scales.length === 0) {
+            alert("Сначала создайте хотя бы одну шкалу и добавьте вопросы!");
+            return;
+        }
+        const currentData = getExportData();
+        initTestData(currentData);
+        switchView('quiz');
+        startQuiz();
+    }
+
+    // =========================================================================
+    // ЛОГИКА ПРОХОЖДЕНИЯ ТЕСТА
+    // =========================================================================
+    
+    window.addEventListener('DOMContentLoaded', () => {
+        fetch('questions.json')
+            .then(response => {
+                if (!response.ok) throw new Error("HTTP error " + response.status);
+                return response.json();
+            })
+            .then(data => {
+                loadTestIntoState(data);
+            })
+            .catch(err => {
+                console.log("Локальный файл questions.json не найден, тест ждет загрузки вручную:", err);
+                document.getElementById('screen-loader').style.display = 'block';
+                document.getElementById('test-title').innerText = "Тест не загружен";
+            });
+    });
+
+    function loadFromFile(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const data = JSON.parse(e.target.result);
+                loadTestIntoState(data);
+            } catch(err) {
+                alert("Ошибка чтения JSON файла!");
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    function initTestData(data) {
+        testData = data;
+        document.getElementById('test-title').innerText = data.title || "Без названия";
+        document.getElementById('test-description').innerText = data.description || "";
+        
+        document.getElementById('screen-loader').style.display = 'none';
+        document.getElementById('screen-start').style.display = 'block';
+        document.getElementById('screen-quiz').style.display = 'none';
+        document.getElementById('screen-results').style.display = 'none';
+    }
+
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+    }
+
+    function startQuiz() {
+        currentQuestionIdx = 0;
+        userAnswers = new Array(testData.q.length).fill(null);
+        shuffledIndices = Array.from({length: testData.q.length}, (_, i) => i);
+        
+        const shouldShuffle = document.getElementById('shuffle-checkbox').checked;
+        if (shouldShuffle) {
+            shuffleArray(shuffledIndices);
+        }
+
+        document.getElementById('screen-start').style.display = 'none';
+        document.getElementById('screen-quiz').style.display = 'block';
+        showQuestion();
+    }
+
+    function showQuestion() {
+        const actualIdx = shuffledIndices[currentQuestionIdx];
+        const q = testData.q[actualIdx];
+        
+        document.getElementById('question-index').innerText = `Вопрос ${currentQuestionIdx + 1} из ${testData.q.length}`;
+        document.getElementById('question-text').innerText = q.question;
+        
+        document.getElementById('btn-back').style.visibility = (currentQuestionIdx === 0) ? 'hidden' : 'visible';
+    }
+
+    function answerQuestion(multiplier) {
+        const actualIdx = shuffledIndices[currentQuestionIdx];
+        userAnswers[actualIdx] = multiplier; 
+        
+        currentQuestionIdx++;
+
+        if (currentQuestionIdx < testData.q.length) {
+            showQuestion();
+        } else {
+            showResults();
+        }
+    }
+
+    function previousQuestion() {
+        if (currentQuestionIdx > 0) {
+            currentQuestionIdx--;
+            showQuestion();
+        }
+    }
+
+    function restartQuiz() {
+        startQuiz();
+    }
+
+    function showResults() {
+        document.getElementById('screen-quiz').style.display = 'none';
+        document.getElementById('screen-results').style.display = 'block';
+
+        const resultsContainer = document.getElementById('results-charts');
+        resultsContainer.innerHTML = '';
+
+        const scores = calculateScores();
+        const twoPoleScales = testData.scales.filter(s => s.type === '2-pole');
+
+        if (twoPoleScales.length >= 2) {
+            const sX = twoPoleScales[0];
+            const sY = twoPoleScales[1];
+            const scoreX = scores[sX.id]; 
+            const scoreY = scores[sY.id]; 
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'canvas-container';
+            wrapper.innerHTML = `
+                <h3>Результаты на компасе</h3>
+                <div class="score-info">
+                    ${sX.poles[0].name}: <b>${(100 - scoreX).toFixed(1)}%</b> | ${sX.poles[1].name}: <b>${scoreX.toFixed(1)}%</b><br>
+                    ${sY.poles[0].name}: <b>${(100 - scoreY).toFixed(1)}%</b> | ${sY.poles[1].name}: <b>${scoreY.toFixed(1)}%</b>
+                </div>
+                <canvas id="res_compass" width="300" height="300" class="canvas-render"></canvas>
+            `;
+            resultsContainer.appendChild(wrapper);
+            renderCompassResult("res_compass", sX, sY, scoreX, scoreY);
+        }
+
+        let twoPoleCount = 0;
+        testData.scales.forEach(scale => {
+            if (scale.type === '2-pole') {
+                twoPoleCount++;
+                if (twoPoleCount <= 2 && twoPoleScales.length >= 2) return;
+
+                const score = scores[scale.id];
+                const wrapper = document.createElement('div');
+                wrapper.className = 'canvas-container';
+                wrapper.innerHTML = `
+                    <h3>${scale.poles[0].name} ↔ ${scale.poles[1].name}</h3>
+                    <div class="score-info">
+                        ${scale.poles[0].name}: <b>${(100 - score).toFixed(1)}%</b> | ${scale.poles[1].name}: <b>${score.toFixed(1)}%</b>
+                    </div>
+                    <canvas id="res_slider_${scale.id}" width="300" height="40" class="canvas-render"></canvas>
+                `;
+                resultsContainer.appendChild(wrapper);
+                renderSliderResult(`res_slider_${scale.id}`, scale.poles[0].color, scale.poles[1].color, score);
+            } else {
+                const scoreTri = scores[scale.id]; 
+                const wrapper = document.createElement('div');
+                wrapper.className = 'canvas-container';
+                wrapper.innerHTML = `
+                    <h3>Баланс сил (${scale.id})</h3>
+                    <div class="score-info">
+                        ${scale.poles[0].name}: <b>${scoreTri.top.toFixed(1)}%</b> | 
+                        ${scale.poles[1].name}: <b>${scoreTri.left.toFixed(1)}%</b> | 
+                        ${scale.poles[2].name}: <b>${scoreTri.right.toFixed(1)}%</b>
+                    </div>
+                    <canvas id="res_tri_${scale.id}" width="250" height="220" class="canvas-render"></canvas>
+                `;
+                resultsContainer.appendChild(wrapper);
+                renderTriangleResult(`res_tri_${scale.id}`, scale.poles[0].color, scale.poles[1].color, scale.poles[2].color, scoreTri);
+            }
+        });
+    }
+
+    function calculateScores() {
+        const results = {};
+
+        testData.scales.forEach(scale => {
+            if (scale.type === '2-pole') {
+                let currentScore = 0;
+                let maxPossibleAbsolute = 0;
+
+                testData.q.forEach((q, qIdx) => {
+                    const weight = q.effect[scale.id];
+                    if (weight !== undefined && weight !== 0) {
+                        const answerMult = userAnswers[qIdx];
+                        currentScore += answerMult * weight;
+                        maxPossibleAbsolute += Math.abs(weight);
+                    }
+                });
+
+                if (maxPossibleAbsolute === 0) {
+                    results[scale.id] = 50.0; 
+                } else {
+                    results[scale.id] = (100 * (maxPossibleAbsolute + currentScore) / (2 * maxPossibleAbsolute));
+                }
+            } else {
+                let topSum = 0;
+                let leftSum = 0;
+                let rightSum = 0;
+
+                testData.q.forEach((q, qIdx) => {
+                    const wTop = q.effect[`${scale.id}_top`] || 0;
+                    const wLeft = q.effect[`${scale.id}_left`] || 0;
+                    const wRight = q.effect[`${scale.id}_right`] || 0;
+
+                    const normalizedAnswer = (userAnswers[qIdx] + 1) / 2; 
+
+                    topSum += normalizedAnswer * wTop;
+                    leftSum += normalizedAnswer * wLeft;
+                    rightSum += normalizedAnswer * wRight;
+                });
+
+                const total = topSum + leftSum + rightSum;
+                if (total === 0) {
+                    results[scale.id] = { top: 33.3, left: 33.3, right: 33.3 };
+                } else {
+                    results[scale.id] = {
+                        top: (topSum / total) * 100,
+                        left: (leftSum / total) * 100,
+                        right: (rightSum / total) * 100
+                    };
+                }
+            }
+        });
+
+        return results;
+    }
+
+    function renderCompassResult(canvasId, scaleX, scaleY, scoreX, scoreY) {
+        const c = document.getElementById(canvasId);
+        const ctx = c.getContext("2d");
+        const w = c.width; const h = c.height;
+
+        const colTL = scaleX.poles[0].color; 
+        const colTR = scaleX.poles[1].color; 
+        const colBL = scaleY.poles[0].color; 
+        const colBR = scaleY.poles[1].color; 
+
+        ctx.fillStyle = colTL; ctx.fillRect(0, 0, w/2, h/2);
+        ctx.fillStyle = colTR; ctx.fillRect(w/2, 0, w/2, h/2);
+        ctx.fillStyle = colBL; ctx.fillRect(0, h/2, w/2, h/2);
+        ctx.fillStyle = colBR; ctx.fillRect(w/2, h/2, w/2, h/2);
+
+        ctx.strokeStyle = "rgba(0,0,0,0.15)";
+        ctx.lineWidth = 1;
+        const gridSize = w / 20; 
+        for (let i = 0; i <= w; i += gridSize) {
+            ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, h); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(w, i); ctx.stroke();
+        }
+
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(w/2, 0); ctx.lineTo(w/2, h); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, h/2); ctx.lineTo(w, h/2); ctx.stroke();
+
+        const userX = (scoreX / 100) * w;
+        const userY = h - ((scoreY / 100) * h); 
+
+        ctx.fillStyle = "#ffffff";
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(userX, userY, 8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+    }
+
+    function renderSliderResult(canvasId, colorLeft, colorRight, score) {
+        const c = document.getElementById(canvasId);
+        const ctx = c.getContext("2d");
+        const w = c.width; const h = c.height;
+
+        let grd = ctx.createLinearGradient(0, 0, w, 0);
+        grd.addColorStop(0, colorLeft);
+        grd.addColorStop(1, colorRight);
+        ctx.fillStyle = grd;
+        ctx.fillRect(0, 0, w, h);
+
+        const userX = (score / 100) * w;
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(userX, 0);
+        ctx.lineTo(userX, h);
+        ctx.stroke();
+
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(userX, 0);
+        ctx.lineTo(userX, h);
+        ctx.stroke();
+    }
+
+    function renderTriangleResult(canvasId, colorTop, colorLeft, colorRight, scoreTri) {
+        const c = document.getElementById(canvasId);
+        const ctx = c.getContext("2d");
+        const w = c.width; const h = c.height;
+        ctx.clearRect(0,0,w,h);
+
+        const rgb1 = hexToRgb(colorTop);
+        const rgb2 = hexToRgb(colorLeft);
+        const rgb3 = hexToRgb(colorRight);
+
+        const x1 = w/2, y1 = 15;
+        const x2 = 15, y2 = h - 15;
+        const x3 = w - 15, y3 = h - 15;
+
+        const imgData = ctx.createImageData(w, h);
+        const data = imgData.data;
+        const det = (y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3);
+
+        for (let y = 0; y < h; y++) {
+            for (let x = 0; x < w; x++) {
+                let w1 = ((y2 - y3) * (x - x3) + (x3 - x2) * (y - y3)) / det;
+                let w2 = ((y3 - y1) * (x - x3) + (x1 - x3) * (y - y3)) / det;
+                let w3 = 1.0 - w1 - w2;
+
+                if (w1 >= -0.01 && w2 >= -0.01 && w3 >= -0.01) {
+                    w1 = Math.max(0, w1); w2 = Math.max(0, w2); w3 = Math.max(0, w3);
+                    let idx = (y * w + x) * 4;
+                    data[idx] = Math.round(w1*rgb1[0] + w2*rgb2[0] + w3*rgb3[0]);
+                    data[idx+1] = Math.round(w1*rgb1[1] + w2*rgb2[1] + w3*rgb3[1]);
+                    data[idx+2] = Math.round(w1*rgb1[2] + w2*rgb2[2] + w3*rgb3[2]);
+                    data[idx+3] = 255;
+                }
+            }
+        }
+        ctx.putImageData(imgData, 0, 0);
+
+        const pTop = scoreTri.top / 100;
+        const pLeft = scoreTri.left / 100;
+        const pRight = scoreTri.right / 100;
+
+        const userX = pTop * x1 + pLeft * x2 + pRight * x3;
+        const userY = pTop * y1 + pLeft * y2 + pRight * y3;
+
+        ctx.fillStyle = "#ffffff";
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(userX, userY, 7, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+    }
+</script>
+</body>
+</html>
